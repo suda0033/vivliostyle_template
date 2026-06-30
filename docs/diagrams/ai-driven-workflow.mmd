@@ -1,0 +1,9 @@
+flowchart LR
+  A[依頼] --> B[要件整理]
+  B --> C[AIによる実装案]
+  C --> D[レビュー]
+  D --> E{採用可否}
+  E -->|修正| C
+  E -->|採用| F[テスト]
+  F --> G[Markdown文書化]
+  G --> H[VivliostyleでPDF化]

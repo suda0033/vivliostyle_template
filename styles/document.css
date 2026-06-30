@@ -1,0 +1,303 @@
+@charset "UTF-8";
+
+@page {
+  size: A4;
+  margin: 22mm 18mm 20mm;
+  @bottom-center {
+    content: counter(page);
+    font-size: 9pt;
+    color: #5b6770;
+  }
+}
+
+@page :first {
+  @bottom-center {
+    content: "";
+  }
+}
+
+:root {
+  font-family: "Noto Sans JP", "Yu Gothic", "YuGothic", "Meiryo", sans-serif;
+  color: #1f2933;
+  line-height: 1.75;
+  widows: 2;
+  orphans: 2;
+}
+
+body {
+  margin: 0;
+  font-size: 10.5pt;
+  counter-reset: chapter;
+}
+
+.cover {
+  break-after: page;
+  min-height: 230mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cover h1 {
+  margin: 0 0 18mm;
+  padding: 0;
+  border: 0;
+  font-size: 26pt;
+  line-height: 1.35;
+  color: #17324d;
+}
+
+.cover p {
+  font-size: 12pt;
+}
+
+.chapter {
+  break-before: page;
+}
+
+.toc {
+  break-before: page;
+  break-after: page;
+}
+
+.toc nav {
+  margin-top: 8mm;
+}
+
+.toc-list,
+.toc-list ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toc-list ol {
+  margin-top: 1.5mm;
+  margin-left: 8mm;
+}
+
+.toc-list li {
+  margin: 1.8mm 0;
+}
+
+.toc-list .toc-level-2 {
+  margin-left: 8mm;
+}
+
+.toc-list .toc-level-3 {
+  margin-left: 16mm;
+  font-size: 9.8pt;
+}
+
+.toc-list .toc-level-4 {
+  margin-left: 24mm;
+  font-size: 9.4pt;
+}
+
+.toc-list a {
+  color: #1f2933;
+  text-decoration: none;
+}
+
+.toc-list a::after {
+  content: leader(".") target-counter(attr(href), page);
+  color: #5b6770;
+}
+
+.toc-number {
+  display: inline-block;
+  min-width: 16mm;
+  color: #2f6f4e;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.toc-title {
+  padding-right: 2mm;
+  background: #fff;
+}
+
+.chapter:not(.unnumbered) {
+  counter-increment: chapter;
+  counter-reset: section;
+}
+
+.chapter:not(.unnumbered) h1::before {
+  content: counter(chapter) " ";
+  color: #2f6f4e;
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter:not(.unnumbered) h2 {
+  counter-increment: section;
+  counter-reset: subsection;
+}
+
+.chapter:not(.unnumbered) h2::before {
+  content: counter(chapter) "." counter(section) " ";
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter:not(.unnumbered) h3 {
+  counter-increment: subsection;
+  counter-reset: subsubsection;
+}
+
+.chapter:not(.unnumbered) h3::before {
+  content: counter(chapter) "." counter(section) "." counter(subsection) " ";
+  color: #2f6f4e;
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter:not(.unnumbered) h4 {
+  counter-increment: subsubsection;
+}
+
+.chapter:not(.unnumbered) h4::before {
+  content: counter(chapter) "." counter(section) "." counter(subsection) "." counter(subsubsection) " ";
+  color: #2f6f4e;
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  break-after: avoid;
+  line-height: 1.35;
+  color: #17324d;
+}
+
+h1 {
+  margin: 0 0 10mm;
+  padding-bottom: 3mm;
+  border-bottom: 1.5pt solid #8aa6bd;
+  font-size: 20pt;
+}
+
+h2 {
+  margin: 10mm 0 4mm;
+  padding-left: 3mm;
+  border-left: 4pt solid #2f6f4e;
+  font-size: 15pt;
+}
+
+h3 {
+  margin: 7mm 0 3mm;
+  font-size: 12.5pt;
+}
+
+h4 {
+  margin: 5mm 0 2mm;
+  font-size: 11pt;
+}
+
+p {
+  margin: 0 0 4mm;
+  text-align: justify;
+}
+
+a {
+  color: #1d5f8a;
+  overflow-wrap: anywhere;
+}
+
+blockquote {
+  margin: 5mm 0;
+  padding: 3mm 4mm;
+  border-left: 4pt solid #8aa6bd;
+  background: #f4f8fb;
+}
+
+ul,
+ol {
+  margin: 0 0 4mm 7mm;
+  padding: 0;
+}
+
+li {
+  margin: 1mm 0;
+}
+
+table {
+  width: 100%;
+  margin: 4mm 0 7mm;
+  border-collapse: collapse;
+  break-inside: avoid;
+  font-size: 9.5pt;
+}
+
+th,
+td {
+  padding: 2mm 2.5mm;
+  border: 0.5pt solid #b7c4cf;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: #e8f0f5;
+  color: #17324d;
+  font-weight: 700;
+}
+
+pre,
+code {
+  font-family: "Cascadia Mono", "Consolas", "Courier New", monospace;
+}
+
+code {
+  padding: 0.1em 0.25em;
+  border-radius: 3px;
+  background: #edf2f6;
+  font-size: 0.92em;
+}
+
+pre {
+  margin: 4mm 0 6mm;
+  padding: 3mm;
+  border: 0.5pt solid #bac8d3;
+  border-radius: 4px;
+  background: #f7f9fb;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 8.7pt;
+  line-height: 1.45;
+}
+
+pre code {
+  padding: 0;
+  background: transparent;
+  font-size: inherit;
+}
+
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+  break-inside: avoid;
+}
+
+.note {
+  margin: 5mm 0;
+  padding: 3mm 4mm;
+  border: 0.5pt solid #96b9a1;
+  border-left: 4pt solid #2f6f4e;
+  background: #eef6f2;
+}
+
+.note p:last-child {
+  margin-bottom: 0;
+}
+
+hr {
+  margin: 8mm 0;
+  border: 0;
+  border-top: 0.5pt solid #b7c4cf;
+}
+
+.footnotes {
+  margin-top: 8mm;
+  border-top: 0.5pt solid #b7c4cf;
+  font-size: 9pt;
+}
