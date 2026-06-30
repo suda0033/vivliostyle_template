@@ -1,6 +1,5 @@
 node_modules/
 .vivliostyle/
-dist/
 tmp/
 spec-bundle.md
 docs/spec/assets/generated/
