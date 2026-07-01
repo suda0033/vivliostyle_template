@@ -260,7 +260,7 @@ sequenceDiagram
 
 ## Mermaid から変換した SVG
 
-次の図は `docs/diagrams/ai-driven-workflow.mmd` を Mermaid CLI で SVG に変換して貼り込む想定です。
+次の図は `samples/diagrams/ai-driven-workflow.mmd` を Mermaid CLI で SVG に変換して貼り込む想定です。
 
 ![AI駆動開発ワークフロー](assets/ai-driven-workflow.svg)
 

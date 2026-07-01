@@ -47,7 +47,7 @@
   <p class="eyebrow">Workflow</p>
   <h2>AI駆動開発では、文書も開発成果物として扱う</h2>
   <figure class="wide-figure">
-    <img src="../docs/assets/ai-driven-workflow.svg" alt="AI駆動開発とPDF化のワークフロー">
+    <img src="../samples/assets/ai-driven-workflow.svg" alt="AI駆動開発とPDF化のワークフロー">
   </figure>
   <p class="note">Markdown文書化までを開発フローに含め、最後にVivliostyleでPDFへ変換する。</p>
 </section>
@@ -79,18 +79,16 @@
 <section class="slide">
   <p class="eyebrow">Repository Design</p>
   <h2>推奨するドキュメント構成</h2>
-  <pre class="tree"><code>docs/spec/
+  <pre class="tree"><code>docs/manuscript/
   00-cover.md
   01-overview.md
-  02-login.md
-  03-order-import.md
-  90-data-and-files.md
-styles/
+  02-operation.md
+docs/styles/
   document.css
-scripts/
-  build-spec.js
-dist/
-  feature-spec-sample.pdf</code></pre>
+docs/scripts/
+  build-document.js
+docs/dist/
+  project-document.pdf</code></pre>
   <p class="note">機能単位のMarkdownを束ね、ビルド時に目次や図の変換を行う。</p>
 </section>
 

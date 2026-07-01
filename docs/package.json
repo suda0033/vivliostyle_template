@@ -1,0 +1,15 @@
+{
+  "name": "vivliostyle-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "setup": "npm ci",
+    "build": "node scripts/build-document.js && vivliostyle build -c vivliostyle.config.js",
+    "preview": "node scripts/build-document.js && vivliostyle preview -c vivliostyle.config.js"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "11.16.0",
+    "@vivliostyle/cli": "9.4.0"
+  }
+}

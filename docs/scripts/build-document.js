@@ -3,25 +3,19 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const root = process.cwd();
-const sourceDir = path.join(root, 'samples', 'spec');
-const generatedDiagramDir = path.join(root, 'samples', 'spec', 'assets', 'generated');
-const outputDir = root;
-const outputFile = path.join(outputDir, 'spec-bundle.md');
-
-const files = [
-  { file: '00-cover.md', toc: false },
-  { file: '01-overview.md', toc: true },
-  { file: '02-login.md', toc: true },
-  { file: '03-order-import.md', toc: true },
-  { file: '04-stock-allocation.md', toc: true },
-  { file: '05-result-export.md', toc: true },
-  { file: '90-data-and-files.md', toc: true },
-  { file: '99-appendix.md', toc: true },
-];
+const config = require(path.join(root, 'document.config.json'));
+const sourceDir = path.join(root, config.sourceDir);
+const generatedDir = path.join(root, '.vivliostyle', 'generated');
+const generatedDiagramDir = path.join(generatedDir, 'diagrams');
+const outputFile = path.join(generatedDir, 'document-bundle.md');
 
 const counters = [0, 0, 0, 0];
 const tocItems = [];
 let mermaidIndex = 0;
+
+function toPosixPath(filePath) {
+  return filePath.split(path.sep).join('/');
+}
 
 function slugify(text, number) {
   return `${number}-${text}`
@@ -57,13 +51,16 @@ function injectAnchors(markdown, includeInToc) {
     .join('\n');
 }
 
-function renderMermaid(source, baseName) {
+function renderMermaid(source, sourceName) {
   fs.mkdirSync(generatedDiagramDir, { recursive: true });
 
+  mermaidIndex += 1;
+  const baseName = `${path.basename(sourceName, '.md')}-${String(mermaidIndex).padStart(2, '0')}`;
   const mmdFile = path.join(generatedDiagramDir, `${baseName}.mmd`);
   const svgFile = path.join(generatedDiagramDir, `${baseName}.svg`);
-  const mmdPath = path.relative(root, mmdFile).replace(/\\/g, '/');
-  const svgPath = path.relative(root, svgFile).replace(/\\/g, '/');
+  const mmdPath = toPosixPath(path.relative(root, mmdFile));
+  const svgPath = toPosixPath(path.relative(root, svgFile));
+
   fs.writeFileSync(mmdFile, source.trim() + '\n', 'utf8');
 
   const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
@@ -80,10 +77,8 @@ function replaceMermaidBlocks(markdown, sourceName) {
   return markdown.replace(
     /```mermaid\s*\n([\s\S]*?)\n```/g,
     (_, diagramSource) => {
-      mermaidIndex += 1;
-      const baseName = `${path.basename(sourceName, '.md')}-${String(mermaidIndex).padStart(2, '0')}`;
-      const svgPath = renderMermaid(diagramSource, baseName);
-      return `![システムフロー図](${svgPath})`;
+      const svgPath = renderMermaid(diagramSource, sourceName);
+      return `![Mermaid diagram](${svgPath})`;
     },
   );
 }
@@ -108,30 +103,36 @@ function buildToc() {
   return lines.join('\n');
 }
 
+function readSource(entry) {
+  const fullPath = path.join(sourceDir, entry.file);
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`Markdown file not found: ${path.relative(root, fullPath)}`);
+  }
+  return fs.readFileSync(fullPath, 'utf8');
+}
+
 const bundledParts = [
   '---',
-  'title: 機能仕様書サンプル',
-  'author: 開発チーム',
-  'date: 2026-06-30',
+  `title: ${config.title}`,
+  `author: ${config.author}`,
   '---',
   '',
 ];
 
-for (const entry of files) {
-  const fullPath = path.join(sourceDir, entry.file);
-  const markdown = fs.readFileSync(fullPath, 'utf8');
+for (const entry of config.files) {
+  const markdown = readSource(entry);
   const processed = injectAnchors(
     replaceMermaidBlocks(markdown, entry.file),
     entry.toc,
   );
   bundledParts.push(processed, '');
 
-  if (entry.file === '00-cover.md') {
+  if (entry.file === config.files[0].file) {
     bundledParts.push('__TOC__', '');
   }
 }
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(generatedDir, { recursive: true });
 fs.writeFileSync(
   outputFile,
   bundledParts.join('\n').replace('__TOC__', buildToc()),

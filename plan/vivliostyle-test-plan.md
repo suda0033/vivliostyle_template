@@ -210,7 +210,7 @@ AI駆動開発で作成した Markdown ドキュメントを、提出用 PDF と
 
 ## 最初に作る検証ファイル案
 
-- `docs/vivliostyle-sample.md`
+- `samples/vivliostyle-sample.md`
 - `styles/document.css`
 - `vivliostyle.config.js`
 

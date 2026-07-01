@@ -3,8 +3,8 @@ module.exports = {
   author: '開発チーム',
   language: 'ja',
   size: 'A4',
-  entry: ['docs/vivliostyle-sample.md'],
+  entry: ['samples/vivliostyle-sample.md'],
   theme: ['styles/document.css'],
-  output: ['dist/vivliostyle-sample.pdf'],
+  output: ['dist/vivliostyle-sample-toc.pdf'],
   workspaceDir: '.vivliostyle',
 };
