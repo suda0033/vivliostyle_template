@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot
 
@@ -26,6 +26,9 @@ if (Test-Path "package-lock.json") {
 } else {
     Write-Host "依存パッケージをインストールします。初回実行後、package-lock.json が作成されます。"
     npm install
+}
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "依存パッケージのインストールに失敗しました。ネットワーク接続とnpmのエラーメッセージを確認してください。"
 }
 
 Write-Host ""

@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 Set-Location $PSScriptRoot
 
@@ -24,9 +24,15 @@ if (-not (Test-Path "node_modules")) {
     } else {
         npm install
     }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "依存パッケージのインストールに失敗しました。ネットワーク接続とnpmのエラーメッセージを確認してください。"
+    }
 }
 
 npm run build
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "PDF生成に失敗しました。上のエラーメッセージを確認してください。"
+}
 
 Write-Host ""
 Write-Host "PDF生成が完了しました。出力先は document.config.json の output を確認してください。"

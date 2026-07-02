@@ -32,23 +32,31 @@ function nextNumber(level) {
   return counters.slice(0, level).join('.');
 }
 
-function injectAnchors(markdown, includeInToc) {
-  return markdown
-    .split(/\r?\n/)
-    .map((line) => {
-      const match = /^(#{1,4})\s+(.+)$/.exec(line);
-      if (!match || !includeInToc) {
-        return line;
-      }
+function isRemoteOrAbsolute(url) {
+  return /^([a-z][a-z0-9+.-]*:|\/|#)/i.test(url);
+}
 
-      const level = match[1].length;
-      const title = match[2].trim();
-      const number = nextNumber(level);
-      const id = slugify(title, number);
-      tocItems.push({ level, number, title, id });
-      return `<span id="${id}"></span>\n\n${line}`;
-    })
-    .join('\n');
+// 原稿ファイルからの相対パスを、バンドル(.vivliostyle/generated/)からの
+// 相対パスに書き換える。バンドル位置基準で解決されるため、これがないと
+// 画像がすべて404になる。
+function rewriteRelativePath(url, fileDir) {
+  if (isRemoteOrAbsolute(url)) {
+    return url;
+  }
+  const absolute = path.resolve(fileDir, url);
+  return toPosixPath(path.relative(generatedDir, absolute));
+}
+
+function rewriteImagePaths(line, fileDir) {
+  return line
+    .replace(
+      /(!\[[^\]]*\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g,
+      (_, before, url, after) => before + rewriteRelativePath(url, fileDir) + after,
+    )
+    .replace(
+      /(<img\b[^>]*\bsrc=")([^"]+)(")/g,
+      (_, before, url, after) => before + rewriteRelativePath(url, fileDir) + after,
+    );
 }
 
 function renderMermaid(source, sourceName) {
@@ -70,17 +78,68 @@ function renderMermaid(source, sourceName) {
     { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' },
   );
 
-  return svgPath;
+  // バンドルからの相対パスで参照する
+  return toPosixPath(path.relative(generatedDir, svgFile));
 }
 
-function replaceMermaidBlocks(markdown, sourceName) {
-  return markdown.replace(
-    /```mermaid\s*\n([\s\S]*?)\n```/g,
-    (_, diagramSource) => {
-      const svgPath = renderMermaid(diagramSource, sourceName);
-      return `![Mermaid diagram](${svgPath})`;
-    },
-  );
+// コードフェンスを状態管理しながら1ファイル分を処理する。
+// フェンス内は見出し検出・画像パス書き換えの対象外にする。
+function processMarkdown(markdown, entry, fileDir) {
+  const output = [];
+  let fence = null; // { marker, isMermaid } — 開いているフェンス
+  let mermaidLines = null;
+
+  for (const line of markdown.split(/\r?\n/)) {
+    if (fence) {
+      const close = /^\s*(`{3,}|~{3,})\s*$/.exec(line);
+      if (
+        close &&
+        close[1][0] === fence.marker[0] &&
+        close[1].length >= fence.marker.length
+      ) {
+        if (fence.isMermaid) {
+          const svgPath = renderMermaid(mermaidLines.join('\n'), entry.file);
+          output.push(`![Mermaid diagram](${svgPath})`);
+          mermaidLines = null;
+        } else {
+          output.push(line);
+        }
+        fence = null;
+      } else if (fence.isMermaid) {
+        mermaidLines.push(line);
+      } else {
+        output.push(line);
+      }
+      continue;
+    }
+
+    const open = /^\s*(`{3,}|~{3,})\s*(\S*)/.exec(line);
+    if (open) {
+      if (open[2] === 'mermaid') {
+        fence = { marker: open[1], isMermaid: true };
+        mermaidLines = [];
+      } else {
+        fence = { marker: open[1], isMermaid: false };
+        output.push(line);
+      }
+      continue;
+    }
+
+    const processed = rewriteImagePaths(line, fileDir);
+    const heading = /^(#{1,4})\s+(.+)$/.exec(processed);
+    if (heading && entry.toc) {
+      const level = heading[1].length;
+      const title = heading[2].trim();
+      const number = nextNumber(level);
+      const id = slugify(title, number);
+      tocItems.push({ level, number, title, id });
+      output.push(`<span id="${id}"></span>`, '', processed);
+    } else {
+      output.push(processed);
+    }
+  }
+
+  return output.join('\n');
 }
 
 function buildToc() {
@@ -113,19 +172,16 @@ function readSource(entry) {
 
 const bundledParts = [
   '---',
-  `title: ${config.title}`,
-  `author: ${config.author}`,
+  `title: ${JSON.stringify(String(config.title))}`,
+  `author: ${JSON.stringify(String(config.author))}`,
   '---',
   '',
 ];
 
 for (const entry of config.files) {
   const markdown = readSource(entry);
-  const processed = injectAnchors(
-    replaceMermaidBlocks(markdown, entry.file),
-    entry.toc,
-  );
-  bundledParts.push(processed, '');
+  const fileDir = path.dirname(path.join(sourceDir, entry.file));
+  bundledParts.push(processMarkdown(markdown, entry, fileDir), '');
 
   if (entry.file === config.files[0].file) {
     bundledParts.push('__TOC__', '');

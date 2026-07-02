@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "setup": "npm ci",
     "build": "node scripts/build-document.js && vivliostyle build -c vivliostyle.config.js",

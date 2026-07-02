@@ -38,25 +38,6 @@ function nextNumber(level) {
   return counters.slice(0, level).join('.');
 }
 
-function injectAnchors(markdown, includeInToc) {
-  return markdown
-    .split(/\r?\n/)
-    .map((line) => {
-      const match = /^(#{1,4})\s+(.+)$/.exec(line);
-      if (!match || !includeInToc) {
-        return line;
-      }
-
-      const level = match[1].length;
-      const title = match[2].trim();
-      const number = nextNumber(level);
-      const id = slugify(title, number);
-      tocItems.push({ level, number, title, id });
-      return `<span id="${id}"></span>\n\n${line}`;
-    })
-    .join('\n');
-}
-
 function renderMermaid(source, baseName) {
   fs.mkdirSync(generatedDiagramDir, { recursive: true });
 
@@ -76,16 +57,65 @@ function renderMermaid(source, baseName) {
   return svgPath;
 }
 
-function replaceMermaidBlocks(markdown, sourceName) {
-  return markdown.replace(
-    /```mermaid\s*\n([\s\S]*?)\n```/g,
-    (_, diagramSource) => {
-      mermaidIndex += 1;
-      const baseName = `${path.basename(sourceName, '.md')}-${String(mermaidIndex).padStart(2, '0')}`;
-      const svgPath = renderMermaid(diagramSource, baseName);
-      return `![システムフロー図](${svgPath})`;
-    },
-  );
+// コードフェンスを状態管理しながら1ファイル分を処理する。
+// フェンス内の行を見出しとして拾わないようにする。
+function processMarkdown(markdown, entry) {
+  const output = [];
+  let fence = null; // { marker, isMermaid } — 開いているフェンス
+  let mermaidLines = null;
+
+  for (const line of markdown.split(/\r?\n/)) {
+    if (fence) {
+      const close = /^\s*(`{3,}|~{3,})\s*$/.exec(line);
+      if (
+        close &&
+        close[1][0] === fence.marker[0] &&
+        close[1].length >= fence.marker.length
+      ) {
+        if (fence.isMermaid) {
+          mermaidIndex += 1;
+          const baseName = `${path.basename(entry.file, '.md')}-${String(mermaidIndex).padStart(2, '0')}`;
+          const svgPath = renderMermaid(mermaidLines.join('\n'), baseName);
+          output.push(`![システムフロー図](${svgPath})`);
+          mermaidLines = null;
+        } else {
+          output.push(line);
+        }
+        fence = null;
+      } else if (fence.isMermaid) {
+        mermaidLines.push(line);
+      } else {
+        output.push(line);
+      }
+      continue;
+    }
+
+    const open = /^\s*(`{3,}|~{3,})\s*(\S*)/.exec(line);
+    if (open) {
+      if (open[2] === 'mermaid') {
+        fence = { marker: open[1], isMermaid: true };
+        mermaidLines = [];
+      } else {
+        fence = { marker: open[1], isMermaid: false };
+        output.push(line);
+      }
+      continue;
+    }
+
+    const heading = /^(#{1,4})\s+(.+)$/.exec(line);
+    if (heading && entry.toc) {
+      const level = heading[1].length;
+      const title = heading[2].trim();
+      const number = nextNumber(level);
+      const id = slugify(title, number);
+      tocItems.push({ level, number, title, id });
+      output.push(`<span id="${id}"></span>`, '', line);
+    } else {
+      output.push(line);
+    }
+  }
+
+  return output.join('\n');
 }
 
 function buildToc() {
@@ -120,11 +150,7 @@ const bundledParts = [
 for (const entry of files) {
   const fullPath = path.join(sourceDir, entry.file);
   const markdown = fs.readFileSync(fullPath, 'utf8');
-  const processed = injectAnchors(
-    replaceMermaidBlocks(markdown, entry.file),
-    entry.toc,
-  );
-  bundledParts.push(processed, '');
+  bundledParts.push(processMarkdown(markdown, entry), '');
 
   if (entry.file === '00-cover.md') {
     bundledParts.push('__TOC__', '');
